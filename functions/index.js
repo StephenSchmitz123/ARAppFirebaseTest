@@ -27,36 +27,41 @@ exports.createMethotar = functions.https.onRequest( async (req, res) => {
 
 exports.createPastProjects = functions.https.onRequest( async (req, res) => {
     const data = req.query; 
-    const clientID = data.client.id
+    const client = data.client
+    const clientID = data.clientID
     const dateStarted = data.dateStarted;
     const dateEnded = data.dateEnded;
     const description = data.description;
     
     const teamRef = db.collection("team");
-    const team = data.team
-
-    const docRef = await db.collection('pastprojects').doc(userID);
-    await docRef.set({
-        'clientID': clientID,
-        'dateStarted': dateStarted,
-        'dateEnded': dateEnded,
-        'description': description,
-    });
-
-    for(member in team){
-        docRef.teamRef.doc(member.id).set({
-            'fName': member.firstName,
-            'lName': member.lastName,
-            'jobDescription': member.jobDescripiton,
-            'bio': member.bio
-        })
+    const team = JSON.parse(data.team);
+    try {
+        const docRef = await db.collection('pastprojects').doc();
+        await docRef.set({
+            'clientID': clientID,
+            'dateStarted': dateStarted,
+            'dateEnded': dateEnded,
+            'description': description,
+        });
+    
+        for (let index in team){
+            const docID = team[index].methotarID;
+            await docRef.collection("team").doc(docID).set({
+                'fName': team[index].fName,
+                'lName': team[index].lName,
+                'jobDescription': team[index].jobDescription,
+                'bio': team[index].bio
+            });
+        } 
+    } catch (error) {
+        return res.status(404).send({"message":"failure"});
     }
-
     return res.send('completed');
 });
 
 exports.createFunFacts = functions.https.onRequest( async (req, res) => {
     const data = req.query; 
+    const userID = data.userID;
     const title = data.title;
     const description = data.description;
 
@@ -89,9 +94,10 @@ exports.getFunFacts = functions.https.onRequest( async (req, res) => {
 });
 
 exports.getPastProjects = functions.https.onRequest( async (req, res) => {
-    const userID = req.query.userID;
-    
-    const user = await db.collection('pastproject').doc(userID).get(); 
+    //const project = await db.collection('pastproject').get(); 
+    //project.forEach(doc => {
+    //
+    //})
     console.log(user.data());
     
     return res.send({
