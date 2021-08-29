@@ -42,17 +42,18 @@ exports.createPastProjects = functions.https.onRequest( async (req, res) => {
             'dateStarted': dateStarted,
             'dateEnded': dateEnded,
             'description': description,
+            'team': team
         });
     
-        for (let index in team){
-            const docID = team[index].methotarID;
-            await docRef.collection("team").doc(docID).set({
-                'fName': team[index].fName,
-                'lName': team[index].lName,
-                'jobDescription': team[index].jobDescription,
-                'bio': team[index].bio
-            });
-        } 
+        // for (let index in team){
+        //     const docID = team[index].methotarID;
+        //     await docRef.collection("team").doc(docID).set({
+        //         'fName': team[index].fName,
+        //         'lName': team[index].lName,
+        //         'jobDescription': team[index].jobDescription,
+        //         'bio': team[index].bio
+        //     });
+        // } 
     } catch (error) {
         return res.status(404).send({"message":"failure"});
     }
@@ -94,21 +95,59 @@ exports.getFunFacts = functions.https.onRequest( async (req, res) => {
 });
 
 exports.getPastProjects = functions.https.onRequest( async (req, res) => {
-    //const project = await db.collection('pastproject').get(); 
-    //project.forEach(doc => {
-    //
-    //})
-    console.log(user.data());
+    const projectSnapshot = await db.collection('pastprojects').get(); 
+    var json = {};
     
-    return res.send({
-        clientID: user.data().clientID,
-        dateStartedtID: user.data().dateStarted,
-        dateEnded: user.data().dateEnded,
-        description: user.data().description,
-        team: user.data().team,
-    });
+    try {
+        projectSnapshot.forEach(doc => {
+            
+            console.log(doc.id);
+            console.log(doc.data());
+            // creates key value pair in json, Key: id Value: data
+            json[doc.id] = doc.data();
+
+
+        }); 
+    } catch (error) {
+        return res.status(404).send(error);
+    }
+    
+    console.log(json);
+    
+    return res.send(json);
+});
+
+exports.addNewScore = functions.https.onRequest( async (req, res) => {
+    const data = req.query;
+    const methotar = data.methotar
+    
+    const docRef = await db.collection("leaderboard").doc();
+    
+    try {
+        await docRef.set({
+            fName: data.fName,
+            lName: data.lName,
+            methodtarID: data.methodtarID,
+            score: data.score,
+            timestamp: FieldValue.serverTimestamp()
+        });
+    } catch (error) {
+        return res.status(404).send(error);
+    }
+
+    return res.send('completed');
 });
 
 exports.getLeaderboard = functions.https.onRequest( async (req, res) => {
-    return res.send('completed');
+    const data = req.query;
+    const userID = data.userID;
+
+    const docRef = await db.collection("leaderboard").get();
+
+    return res.send({
+        firstName: user.data().fName,
+        lastName: user.data().lName,
+        jobDescription: user.data().jobDescription,
+        bio: user.data().bio,
+    });
 });
